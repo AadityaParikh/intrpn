@@ -1,0 +1,4 @@
+Intrpn (Interactive RPN) is a rpn calculator focused on being able to get the most interaction out of the simplest mechanics.
+
+Dependencies:
+ - ncurses
