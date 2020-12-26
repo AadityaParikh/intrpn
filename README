@@ -1,4 +1,8 @@
-Intrpn (Interactive RPN) is a rpn calculator focused on being able to get the most interaction out of the simplest mechanics.
+What is intrpn:
+Intrpn (Interactive RPN) is a rpn calculator with an interface and flow found on most physical calculators (operands can operate on current "typing" register, "live" stack etc) which I found lacking on calculators such as dc.
 
 Dependencies:
  - ncurses
+
+Compiling:
+`make`
