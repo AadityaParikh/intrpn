@@ -55,7 +55,7 @@ int main(int argc,char** argv) {
 		}
 		for(int i = 0;i<26;i++) {
 			if(registers[i] != 0) {
-				printw("%c:%G,",0x41+i,registers[i]);
+				printw("%c:%G,",0x61+i,registers[i]);
 			}
 		}
 		input = getch();
@@ -65,19 +65,23 @@ int main(int argc,char** argv) {
 		}
 		if(input >= 0x41) { // commands don't have numbers
 			if(input <= 0x5A) { // register entry
-				if(stack[stackIndex] == 0) {stackIndex--;}
-				registers[input-0x41] = stack[stackIndex];
-				stack[stackIndex] = 0;
-				continue;
 			}
 			switch(input) {
 				case 'u' : // register popping
 					printw("input in a register to pop");
 					input = getch();
-					if(input > 0x5A || input < 0x41) {continue;}
-					stack[stackIndex] = registers[input-0x41];
+					if(input > 0x7A || input < 0x61) {continue;}
+					stack[stackIndex] = registers[input-0x61];
 					stackIndex++;
-					registers[input-0x41] = 0;
+					registers[input-0x61] = 0;
+					continue;
+				case 'U' : // register pushing
+					printw("input in a register to push");
+					input = getch();
+					if(input > 0x7A || input < 0x61 || (stack[stackIndex] == 0 && stackIndex == 0)) {continue;}
+					if(stack[stackIndex] == 0) {stackIndex--;}
+					registers[input-0x61] = stack[stackIndex];
+					stack[stackIndex] = 0;
 					continue;
 				case 'q' : // square rooting
 					stackIndex--;
@@ -108,7 +112,7 @@ int main(int argc,char** argv) {
 					continue;
 			}
 			// below here is all arithmetic operations
-			if(stackSize<2 && !(stackSize == 2 && stack[1] != 0)) {continue;}
+			if(stackSize<=2 && (stack[stackIndex] == 0 && stackSize == 2)) {continue;} // edge case
 			stackIndex-= stack[stackIndex]==0?2:1;
 			/* all operations in this switch have 2 operands
 			 * usually index will go down by 2 for this
