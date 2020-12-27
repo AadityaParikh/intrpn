@@ -6,7 +6,7 @@
 
 
 int main(int argc,char** argv) {
-	char input[200]; // initial input (I know, 200 bytes is alot, stfu)
+	char input; // input
 	double doubleIn = 0; // double parse of input
 	double registers[26] = {0}; // registers, capital letters
 	double* stack;
@@ -43,17 +43,17 @@ int main(int argc,char** argv) {
 			}
 		}
 		echo(); // so you can see what you're typing
-		scanw("%s",input);
+		input = getch();
 		noecho();
 		printw("\n");
-		if(input[0] >= 0x41) { // commands don't have numbers
-			if(input[0] <= 0x5A) { // register entry
+		if(input >= 0x41) { // commands don't have numbers
+			if(input <= 0x5A) { // register entry
 				stackIndex--;
-				registers[input[0]-0x41] = stack[stackIndex];
+				registers[input-0x41] = stack[stackIndex];
 				stack[stackIndex] = 0;
 				continue;
 			}
-			switch(input[0]) {
+			switch(input) {
 				case 'q' :
 					stackIndex--;
 					stack[stackIndex] = sqrt(stack[stackIndex]);
@@ -83,7 +83,7 @@ int main(int argc,char** argv) {
 				continue;
 			}
 			stackIndex-=2; // all arithmetic operations implemented have 2 operands
-			switch(input[0]) {
+			switch(input) {
 				case 'a' :
 					stack[stackIndex] += stack[stackIndex+1];
 					break;
@@ -113,14 +113,14 @@ int main(int argc,char** argv) {
 			stack[stackIndex] = 0; 
 		} else {
 			errno = 0;
-			doubleIn = strtod(input,NULL);
+			doubleIn = strtod(&input,NULL);
 			if(errno != 0) {
 				printw("Couldn't parse number");
 				continue;
 			}
 			stack[stackIndex] = doubleIn;
 			stackIndex++;
-			if(stackIndex==stackSize) {
+			if(stackIndex == stackSize) {
 				//stack = realloc(stack,(stackIndex+1)*sizeof(double));
 				stackSize++;
 				stack = realloc(stack,stackSize*sizeof(double));
