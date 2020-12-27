@@ -1,8 +1,9 @@
-#include <stdio.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <errno.h>
 #include <math.h>
 #include <curses.h>
+#include <string.h>
 
 
 
@@ -39,11 +40,13 @@ int main(int argc,char** argv) {
 			stackSize--;
 			stack = realloc(stack,stackSize*sizeof(double));
 			stack[stackSize-1] = 0;
+			continue; // acts as a loop if stack is *too* small
 		}
-		if(stackIndex == stackSize) {
+		if(stackIndex >= stackSize) {
 			stackSize++;
 			stack = realloc(stack,stackSize*sizeof(double));
 			stack[stackSize-1] = 0;
+			continue; // same as above but for *too* big of a stack
 		}
 		clear();
 		refresh();
@@ -56,14 +59,13 @@ int main(int argc,char** argv) {
 			}
 		}
 		input = getch();
-		printw("\n");
-		if(input == KEY_ENTER) {
+		if(input == KEY_ENTER || input == '\n' || input == '\r') {
 			stackIndex++;
 			continue;
 		}
 		if(input >= 0x41) { // commands don't have numbers
 			if(input <= 0x5A) { // register entry
-				stackIndex--;
+				if(stack[stackIndex] == 0) {stackIndex--;}
 				registers[input-0x41] = stack[stackIndex];
 				stack[stackIndex] = 0;
 				continue;
@@ -99,9 +101,14 @@ int main(int argc,char** argv) {
 					stack[0] = 0;
 					stack[1] = 0;
 					continue;
+				case 'p' : // pi
+					if(stack[stackIndex] != 0) {stackIndex++;}
+					stack[stackIndex] = M_PI;
+					stackIndex++;
+					continue;
 			}
 			// below here is all arithmetic operations
-			if(stackIndex<2) {continue;}
+			if(stackSize<2 && !(stackSize == 2 && stack[1] != 0)) {continue;}
 			stackIndex-= stack[stackIndex]==0?2:1;
 			/* all operations in this switch have 2 operands
 			 * usually index will go down by 2 for this
@@ -136,14 +143,19 @@ int main(int argc,char** argv) {
 			stackIndex++; // "popping" top value since there is only 1 result
 			stack[stackIndex] = 0; 
 		} else {
+			temp = 0;
+			memset(strIn,0,100);
 			if(isfinite(stack[stackIndex]) == 0) {continue;}
 			strfromd(strIn,100,"%G",stack[stackIndex]);
 			for(temp = 0;temp<100;temp++) { // I can't be fucked to make an int temp
 				if(strIn[(int)temp] != 0) {continue;}
 				break;
 			}
+			if(input == KEY_BACKSPACE) {
+				strIn[(int)temp-1] = 0;
+			}
 			strIn[(int)temp] = input;
-			if(input == '.' && temp < 100) {
+			if(input == '.' && temp < 100 && ((float)(volatile int)stack[stackIndex] == stack[stackIndex])) {
 				input = getch();
 				strIn[(int)temp+1] = input;
 			}
@@ -152,6 +164,7 @@ int main(int argc,char** argv) {
 			if(errno != 0) {continue;}
 			stack[stackIndex] = doubleIn;
 			temp = 0;
+			memset(strIn,0,100);
 		}
 	}
 	free(stack);
