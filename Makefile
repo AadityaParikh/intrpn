@@ -1,2 +1,2 @@
 intrpn : intrpn.c
-	gcc -o intrpn -lm -lncurses intrpn.c
+	gcc -o intrpn -Wall -lm -lncurses intrpn.c
