@@ -17,6 +17,7 @@ int stackSize = 1;
 
 int main(int argc,char** argv) {
 	char input; // input
+	char strIn[100] = {0}; // string input
 	double doubleIn = 0; // double parse of input
 	double registers[26] = {0}; // registers, capital letters
 	double temp = 0; // general purpose temp var
@@ -54,19 +55,18 @@ int main(int argc,char** argv) {
 				printw("%c:%G,",0x41+i,registers[i]);
 			}
 		}
-		echo(); // so you can see what you're typing
 		input = getch();
-		noecho();
 		printw("\n");
+		if(input == KEY_ENTER) {
+			stackIndex++;
+			continue;
+		}
 		if(input >= 0x41) { // commands don't have numbers
 			if(input <= 0x5A) { // register entry
 				stackIndex--;
 				registers[input-0x41] = stack[stackIndex];
 				stack[stackIndex] = 0;
 				continue;
-			}
-			if(input == KEY_ENTER) { // curses keys can't be switch-ed
-				stackIndex++;
 			}
 			switch(input) {
 				case 'u' : // register popping
@@ -77,7 +77,7 @@ int main(int argc,char** argv) {
 					stackIndex++;
 					registers[input-0x41] = 0;
 					continue;
-				case 'q' : // fast square rooting
+				case 'q' : // square rooting
 					stackIndex--;
 					stack[stackIndex] = sqrt(stack[stackIndex]);
 					stackIndex++;
@@ -136,11 +136,22 @@ int main(int argc,char** argv) {
 			stackIndex++; // "popping" top value since there is only 1 result
 			stack[stackIndex] = 0; 
 		} else {
+			if(isfinite(stack[stackIndex]) == 0) {continue;}
+			strfromd(strIn,100,"%G",stack[stackIndex]);
+			for(temp = 0;temp<100;temp++) { // I can't be fucked to make an int temp
+				if(strIn[(int)temp] != 0) {continue;}
+				break;
+			}
+			strIn[(int)temp] = input;
+			if(input == '.' && temp < 100) {
+				input = getch();
+				strIn[(int)temp+1] = input;
+			}
 			errno = 0;
-			doubleIn = strtod(&input,NULL);
+			doubleIn = strtod(strIn,NULL);
 			if(errno != 0) {continue;}
 			stack[stackIndex] = doubleIn;
-			stackIndex++;
+			temp = 0;
 		}
 	}
 	free(stack);
