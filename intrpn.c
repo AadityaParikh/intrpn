@@ -5,24 +5,26 @@
 #include <curses.h>
 
 
+
+double* stack;
+int stackIndex = 0; // where stack is pointing (not a literal pointer) to 
+int stackSize = 1;
+/* Stack size is fundementally different from stack index,
+ * the code doesn't pop and push values as needed like a proper stack,
+ * it will go in the middle and perform calculations for the sake of brevity,
+ * the stack size will have the actual size of the stack while the index can vary
+ */
+
 int main(int argc,char** argv) {
 	char input; // input
 	double doubleIn = 0; // double parse of input
 	double registers[26] = {0}; // registers, capital letters
-	double* stack;
 	double temp = 0; // general purpose temp var
 	stack = malloc(sizeof(double)); 
 	if(stack == NULL) {
 		fprintf(stderr,"Stack couldn't be initialized");
 		return(1);
 	}
-	int stackIndex = 0; // where stack is pointing (not a literal pointer) to 
-	int stackSize = 1;
-	/* Stack size is fundementally different from stack index,
-	 * the code doesn't pop and push values as needed like a proper stack,
-	 * it will go in the middle and perform calculations for the sake of brevity,
-	 * the stack size will have the actual size of the stack while the index can vary
-	 */
 
 	initscr();
 	cbreak();
@@ -63,8 +65,11 @@ int main(int argc,char** argv) {
 				stack[stackIndex] = 0;
 				continue;
 			}
+			if(input == KEY_ENTER) { // curses keys can't be switch-ed
+				stackIndex++;
+			}
 			switch(input) {
-				case 'r' : // register popping
+				case 'u' : // register popping
 					printw("input in a register to pop");
 					input = getch();
 					if(input > 0x5A || input < 0x41) {continue;}
@@ -96,10 +101,13 @@ int main(int argc,char** argv) {
 					continue;
 			}
 			// below here is all arithmetic operations
-			if(stackIndex<2) { // small stack
-				continue;
-			}
-			stackIndex-=2; // all arithmetic operations implemented have 2 operands
+			if(stackIndex<2) {continue;}
+			stackIndex-= stack[stackIndex]==0?2:1;
+			/* all operations in this switch have 2 operands
+			 * usually index will go down by 2 for this
+			 * but if user has just put in a number,
+			 * that number needs to be used so it will go down by 1
+			 */
 			switch(input) {
 				case 'a' :
 					stack[stackIndex] += stack[stackIndex+1];
@@ -130,9 +138,7 @@ int main(int argc,char** argv) {
 		} else {
 			errno = 0;
 			doubleIn = strtod(&input,NULL);
-			if(errno != 0) {
-				continue;
-			}
+			if(errno != 0) {continue;}
 			stack[stackIndex] = doubleIn;
 			stackIndex++;
 		}
