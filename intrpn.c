@@ -32,10 +32,20 @@ int main(int argc,char** argv) {
 	keypad(stdscr,true);
 
 	while(1) {
+		if(stackIndex+1 < stackSize) {
+			stackSize--;
+			stack = realloc(stack,stackSize*sizeof(double));
+			stack[stackSize-1] = 0;
+		}
+		if(stackIndex == stackSize) {
+			stackSize++;
+			stack = realloc(stack,stackSize*sizeof(double));
+			stack[stackSize-1] = 0;
+		}
 		clear();
 		refresh();
 		for(int i = stackSize-1;i>=0;i--) {
-			printw("%d\t%G\n",i,stack[i]);
+			printw("%d\t%G\t%c\n",i,stack[i],i==stackIndex?'-':' ');
 		}
 		for(int i = 0;i<26;i++) {
 			if(registers[i] != 0) {
@@ -54,12 +64,20 @@ int main(int argc,char** argv) {
 				continue;
 			}
 			switch(input) {
-				case 'q' :
+				case 'r' : // register popping
+					printw("input in a register to pop");
+					input = getch();
+					if(input > 0x5A || input < 0x41) {continue;}
+					stack[stackIndex] = registers[input-0x41];
+					stackIndex++;
+					registers[input-0x41] = 0;
+					continue;
+				case 'q' : // fast square rooting
 					stackIndex--;
 					stack[stackIndex] = sqrt(stack[stackIndex]);
 					stackIndex++;
 					continue;
-				case 'w' :
+				case 'w' : // switching values
 					if(stackIndex<2) {
 						printw("Not enough items\n");
 						continue;
@@ -69,7 +87,7 @@ int main(int argc,char** argv) {
 					stack[stackIndex-1] = temp;
 					temp = 0;
 					continue;
-				case 'c' :
+				case 'c' : // clear stack
 					stackSize = 1;
 					stack = realloc(stack,sizeof(double));
 					stackIndex = 0;
@@ -79,7 +97,6 @@ int main(int argc,char** argv) {
 			}
 			// below here is all arithmetic operations
 			if(stackIndex<2) { // small stack
-				printw("Not enough items\n");
 				continue;
 			}
 			stackIndex-=2; // all arithmetic operations implemented have 2 operands
@@ -106,7 +123,6 @@ int main(int argc,char** argv) {
 					stack[stackIndex] = (log(stack[stackIndex]))/(log(stack[stackIndex+1]));
 					break;
 				default: 
-					printw("not a valid command\n");
 					stackIndex++; // so top value doesn't get cleared
 			}
 			stackIndex++; // "popping" top value since there is only 1 result
@@ -115,22 +131,10 @@ int main(int argc,char** argv) {
 			errno = 0;
 			doubleIn = strtod(&input,NULL);
 			if(errno != 0) {
-				printw("Couldn't parse number");
 				continue;
 			}
 			stack[stackIndex] = doubleIn;
 			stackIndex++;
-			if(stackIndex == stackSize) {
-				//stack = realloc(stack,(stackIndex+1)*sizeof(double));
-				stackSize++;
-				stack = realloc(stack,stackSize*sizeof(double));
-				stack[stackSize-1] = 0;
-			}
-		}
-		if(stackIndex+1 < stackSize) {
-			stackSize--;
-			stack = realloc(stack,stackSize*sizeof(double));
-			stack[stackSize-1] = 0;
 		}
 	}
 	free(stack);
