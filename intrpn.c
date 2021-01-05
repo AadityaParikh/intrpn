@@ -51,7 +51,7 @@ int main(int argc,char** argv) {
 		clear();
 		refresh();
 		for(int i = stackSize-1;i>=0;i--) {
-			printw("%d\t%G\t%c\n",i,stack[i],i==stackIndex?'-':' ');
+			printw("%d\t%12.12f\t%c\n",i,stack[i],i==stackIndex?'-':' ');
 		}
 		for(int i = 0;i<26;i++) {
 			if(registers[i] != 0) {
@@ -98,12 +98,16 @@ int main(int argc,char** argv) {
 					stack[stackIndex-1] = temp;
 					temp = 0;
 					continue;
-				case 'c' : // clear stack
+				case 'C' : // clear stack
 					stackSize = 1;
 					stack = realloc(stack,sizeof(double));
 					stackIndex = 0;
 					stack[0] = 0;
 					stack[1] = 0;
+					continue;
+				case 'c' : // clear current value
+					if(stack[stackIndex] == 0) {stackIndex--;}
+					stack[stackIndex] = 0;
 					continue;
 				case 'p' : // pi
 					if(stack[stackIndex] != 0) {stackIndex++;}
@@ -148,18 +152,24 @@ int main(int argc,char** argv) {
 			stack[stackIndex] = 0; 
 		} else {
 			temp = 0;
-			memset(strIn,0,100);
+			// sizeof(strIn) isn't divided by sizof char because char is usually 1 byte
+			memset(strIn,0,sizeof(strIn));
 			if(isfinite(stack[stackIndex]) == 0) {continue;}
-			strfromd(strIn,100,"%G",stack[stackIndex]);
-			for(temp = 0;temp<100;temp++) { // I can't be fucked to make an int temp
+			strfromd(strIn,sizeof(strIn),"%.12G",stack[stackIndex]);
+			for(temp = 0;temp<sizeof(strIn);temp++) { // I can't be fucked to make an int temp
 				if(strIn[(int)temp] != 0) {continue;}
 				break;
 			}
-			if(input == KEY_BACKSPACE) {
+			if(input == KEY_BACKSPACE) { // doesn't work currently
 				strIn[(int)temp-1] = 0;
 			}
+
 			strIn[(int)temp] = input;
-			if(input == '.' && temp < 100 && ((float)(volatile int)stack[stackIndex] == stack[stackIndex])) {
+
+			if(input == '.' && temp < sizeof(strIn) && ((float)(volatile int)stack[stackIndex] == stack[stackIndex])) {
+				input = getch();
+				strIn[(int)temp+1] = input;
+			} else if(input == '0' && ((float)(volatile int)stack[stackIndex] != stack[stackIndex])) {
 				input = getch();
 				strIn[(int)temp+1] = input;
 			}
@@ -168,7 +178,7 @@ int main(int argc,char** argv) {
 			if(errno != 0) {continue;}
 			stack[stackIndex] = doubleIn;
 			temp = 0;
-			memset(strIn,0,100);
+			memset(strIn,0,sizeof(strIn));
 		}
 	}
 	free(stack);
