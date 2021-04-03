@@ -14,6 +14,7 @@ int stackSize = 1;
  * the code doesn't pop and push values as needed like a proper stack,
  * it will go in the middle and perform calculations for the sake of brevity,
  * the stack size will have the actual size of the stack while the index can vary
+ * I know this stack implementation is jank, doing it this way is just easier
  */
 
 int main(int argc,char** argv) {
@@ -51,7 +52,7 @@ int main(int argc,char** argv) {
 		clear();
 		refresh();
 		for(int i = stackSize-1;i>=0;i--) {
-			printw("%d\t%12.12f\t%c\n",i,stack[i],i==stackIndex?'-':' ');
+			printw("%d\t%14.15f\t%c\n",i,stack[i],i==stackIndex?'-':' ');
 		}
 		for(int i = 0;i<26;i++) {
 			if(registers[i] != 0) {
@@ -89,10 +90,6 @@ int main(int argc,char** argv) {
 					stackIndex++;
 					continue;
 				case 'w' : // switching values
-					if(stackIndex<2) {
-						printw("Not enough items\n");
-						continue;
-					}
 					temp = stack[stackIndex-2];
 					stack[stackIndex-2] = stack[stackIndex-1];
 					stack[stackIndex-1] = temp;
@@ -106,17 +103,28 @@ int main(int argc,char** argv) {
 					stack[1] = 0;
 					continue;
 				case 'c' : // clear current value
-					if(stack[stackIndex] == 0) {stackIndex--;}
+					if(stack[stackIndex] == 0 && stackIndex > 0) {stackIndex--;}
 					stack[stackIndex] = 0;
 					continue;
 				case 'p' : // pi
-					if(stack[stackIndex] != 0) {stackIndex++;}
 					stack[stackIndex] = M_PI;
 					stackIndex++;
 					continue;
+				case 'o' : // e
+					stack[stackIndex] = M_E;
+					stackIndex++;
+					continue;
+				case 'i' : // manual input
+					printw("manual input: ");
+					echo();
+					scanf("%lg",&stack[stackIndex]);
+					noecho();
+					stackIndex++;
+					continue;
+					
 			}
 			// below here is all arithmetic operations
-			if(stackSize<=2 && (stack[stackIndex] == 0 && stackSize == 2)) {continue;} // edge case
+			if(stackSize<2 || (stack[stackIndex] == 0 && stackSize == 2)) {continue;} // edge case
 			stackIndex-= stack[stackIndex]==0?2:1;
 			/* all operations in this switch have 2 operands
 			 * usually index will go down by 2 for this
@@ -155,13 +163,9 @@ int main(int argc,char** argv) {
 			// sizeof(strIn) isn't divided by sizof char because char is usually 1 byte
 			memset(strIn,0,sizeof(strIn));
 			if(isfinite(stack[stackIndex]) == 0) {continue;}
-			strfromd(strIn,sizeof(strIn),"%.12G",stack[stackIndex]);
-			for(temp = 0;temp<sizeof(strIn);temp++) { // I can't be fucked to make an int temp
-				if(strIn[(int)temp] != 0) {continue;}
-				break;
-			}
-			if(input == KEY_BACKSPACE) { // doesn't work currently
-				strIn[(int)temp-1] = 0;
+			strfromd(strIn,sizeof(strIn),"%G",stack[stackIndex]);
+			for(int i = sizeof(strIn)-1;i>=0;i--) { 
+				if(strIn[i] != '0') {temp=i+1;break;}
 			}
 
 			strIn[(int)temp] = input;
