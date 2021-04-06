@@ -5,3 +5,6 @@ install : intrpn
 	mkdir -p $(DESTDIR)$(PREFIX)/bin
 	cp -f intrpn $(DESTDIR)$(PREFIX)/bin
 	chmod 755 $(DESTDIR)$(PREFIX)/bin/intrpn
+
+uninstall : 
+	rm -f $(DESTDIR)$(PREFIX)/bin/intrpn
