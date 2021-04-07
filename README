@@ -6,3 +6,6 @@ Dependencies:
 
 Compiling:
 `make`
+
+Installing:
+`make install`
