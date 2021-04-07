@@ -20,9 +20,9 @@ int stackSize = 1;
 int main(int argc,char** argv) {
 	char input; // input
 	char strIn[100] = {0}; // string input
-	double doubleIn = 0; // double parse of input
 	double registers[26] = {0}; // registers, capital letters
 	double temp = 0; // general purpose temp var
+	int intTemp = 0;
 	stack = malloc(sizeof(double)); 
 	if(stack == NULL) {
 		fprintf(stderr,"Stack couldn't be initialized");
@@ -52,7 +52,7 @@ int main(int argc,char** argv) {
 		clear();
 		refresh();
 		for(int i = stackSize-1;i>=0;i--) {
-			printw("%d\t%14.15f\t%c\n",i,stack[i],i==stackIndex?'-':' ');
+			printw("%d\t%lG\t%c\n",i,stack[i],i==stackIndex?'-':' ');
 		}
 		for(int i = 0;i<26;i++) {
 			if(registers[i] != 0) {
@@ -64,9 +64,7 @@ int main(int argc,char** argv) {
 			stackIndex++;
 			continue;
 		}
-		if(input >= 0x41) { // commands don't have numbers
-			if(input <= 0x5A) { // register entry
-			}
+		if((input >= 0x41 || input <= 0x2F )&& input != 0x2E) { // non numerical input
 			switch(input) {
 				case 'u' : // register popping
 					printw("input in a register to pop");
@@ -85,8 +83,13 @@ int main(int argc,char** argv) {
 					stack[stackIndex] = 0;
 					continue;
 				case 'q' : // square rooting
-					stackIndex--;
+					if(stack[stackIndex] == 0) {stackIndex--;} // TODO reduce ^C ^V here
 					stack[stackIndex] = sqrt(stack[stackIndex]);
+					stackIndex++;
+					continue;
+				case 'x' :
+					if(stack[stackIndex] == 0) {stackIndex--;}
+					stack[stackIndex] = pow(stack[stackIndex],(float)2);
 					stackIndex++;
 					continue;
 				case 'w' : // switching values
@@ -115,12 +118,15 @@ int main(int argc,char** argv) {
 					stackIndex++;
 					continue;
 				case 'i' : // manual input
-					printw("manual input: ");
 					echo();
-					scanf("%lg",&stack[stackIndex]);
+					printw("manual input: ");
+					refresh();
 					noecho();
+					scanf("%lg",&stack[stackIndex]);
 					stackIndex++;
 					continue;
+				case '-' : // invert
+					stack[stackIndex] *= -1;
 					
 			}
 			// below here is all arithmetic operations
@@ -150,38 +156,40 @@ int main(int argc,char** argv) {
 				case 'l' : // index+1 being base
 					stack[stackIndex] = (log(stack[stackIndex]))/(log(stack[stackIndex+1]));
 					break;
-				case 'r' : // index+1 being root
-					stack[stackIndex] = (log(stack[stackIndex]))/(log(stack[stackIndex+1]));
-					break;
 				default: 
 					stackIndex++; // so top value doesn't get cleared
 			}
 			stackIndex++; // "popping" top value since there is only 1 result
 			stack[stackIndex] = 0; 
-		} else {
-			temp = 0;
-			// sizeof(strIn) isn't divided by sizof char because char is usually 1 byte
-			memset(strIn,0,sizeof(strIn));
-			if(isfinite(stack[stackIndex]) == 0) {continue;}
-			strfromd(strIn,sizeof(strIn),"%G",stack[stackIndex]);
-			for(int i = sizeof(strIn)-1;i>=0;i--) { 
-				if(strIn[i] != '0') {temp=i+1;break;}
+		} else { // number input
+			//setting temp variables
+			intTemp = 0;
+			memset(strIn,0,sizeof(strIn)/sizeof(char));
+			if(isfinite(stack[stackIndex]) == 0) {continue;} // only edit real numbers
+			
+			strfromd(strIn,100,"%G",stack[stackIndex]); // turning current stack value to string
+
+			for(intTemp = 0;strIn[intTemp] != 0;intTemp++) {}
+
+			if(input == KEY_BACKSPACE || input == '\b') {
+				strIn[intTemp] = 0;
+				intTemp = 0; // TODO make resetting these vars a function
+				memset(strIn,0,sizeof(strIn)/sizeof(char));
+				continue;
 			}
 
-			strIn[(int)temp] = input;
-
-			if(input == '.' && temp < sizeof(strIn) && ((float)(volatile int)stack[stackIndex] == stack[stackIndex])) {
+			if(input == '.' && (float)(int)stack[stackIndex] == stack[stackIndex]) {
+				strIn[intTemp] = '.';
 				input = getch();
-				strIn[(int)temp+1] = input;
-			} else if(input == '0' && ((float)(volatile int)stack[stackIndex] != stack[stackIndex])) {
-				input = getch();
-				strIn[(int)temp+1] = input;
+				strIn[intTemp+1] = input;
+			} else {
+				strIn[intTemp] = input;
 			}
-			errno = 0;
-			doubleIn = strtod(strIn,NULL);
-			if(errno != 0) {continue;}
-			stack[stackIndex] = doubleIn;
-			temp = 0;
+
+			stack[stackIndex] = atof(strIn);
+			
+			//resetting intTemp variables
+			intTemp = 0;
 			memset(strIn,0,sizeof(strIn));
 		}
 	}
